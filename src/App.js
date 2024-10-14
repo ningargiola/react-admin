@@ -13,6 +13,8 @@ import Calendar from "./scenes/calendar/calendar";
 import LoginPage from './scenes/login';  // Import your login page
 import PrivateRoute from './PrivateRoute'; // Import your PrivateRoute component
 import { useAuth } from './authprovider';  // Import the authentication hook
+import Settings from './scenes/settings';
+
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -37,7 +39,7 @@ function App() {
               <Route path="/faq" element={<PrivateRoute><FAQ /></PrivateRoute>} />
               <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
               <Route path="/invoices" element={<PrivateRoute><Invoices /></PrivateRoute>} />
-
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
         </div>

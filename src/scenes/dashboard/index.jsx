@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, List, ListItem, ListItemText, Typography, useTheme } from "@mui/material";
+import { Box, List, ListItem, ListItemText, Typography, useTheme, Skeleton } from "@mui/material";
 import { tokens } from "../../theme";
 import { formatDate } from "@fullcalendar/core";
 import Header from "../../components/Header";
@@ -17,12 +17,14 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
   const [currentEvents, setCurrentEvents] = useState([]);
   const [todos, setTodos] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true); // Loading state for events
+  const [loadingTodos, setLoadingTodos] = useState(true);   // Loading state for todos
 
   // Firestore collection references
   const eventsCollectionRef = collection(db, "calendar");
   const todosCollectionRef = collection(db, "todo");
 
-  // Fetch events from Firestore when the component mounts
+  // Fetch events and todos from Firestore
   useEffect(() => {
     const fetchEvents = async () => {
       const eventDocs = await getDocs(eventsCollectionRef);
@@ -31,6 +33,7 @@ const Dashboard = () => {
         ...doc.data(),
       }));
       setCurrentEvents(events);
+      setLoadingEvents(false); // Events fetched, stop showing skeleton
     };
 
     const fetchTodos = async () => {
@@ -40,6 +43,7 @@ const Dashboard = () => {
         ...doc.data(),
       }));
       setTodos(todoItems);
+      setLoadingTodos(false); // Todos fetched, stop showing skeleton
     };
 
     fetchEvents();
@@ -101,11 +105,18 @@ const Dashboard = () => {
 
         {/* ROW 2: Deadlines */}
         <Box
-          gridColumn="span 4"
+          gridColumn={{ xs: "span 12", lg: "span 4" }}
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           overflow="auto"
           p="10px"
+          sx={{
+            '&::-webkit-scrollbar': { height: '8px' },
+            '&::-webkit-scrollbar-thumb': { backgroundColor: colors.greenAccent[500], borderRadius: '10px' },
+            '&::-webkit-scrollbar-track': { backgroundColor: colors.grey[700] },
+            scrollbarWidth: 'thin',
+            scrollbarColor: `${colors.greenAccent[500]} ${colors.grey[700]}`,
+          }}
         >
           <Box
             display="flex"
@@ -120,35 +131,41 @@ const Dashboard = () => {
             </Typography>
           </Box>
           <List>
-            {currentEvents.map((event) => (
-              <ListItem
-                key={event.id}
-                sx={{
-                  backgroundColor: colors.greenAccent[500],
-                  margin: "10px 0px",
-                  borderRadius: "5px",
-                }}
-              >
-                <ListItemText
-                  primary={event.title}
-                  secondary={
-                    <Typography>
-                      {formatDate(event.start, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                  }
-                />
-              </ListItem>
-            ))}
+            {loadingEvents
+              ? Array(5).fill().map((_, index) => (
+                  <ListItem key={index}>
+                    <Skeleton variant="rectangular" width="100%" height={40} />
+                  </ListItem>
+                ))
+              : currentEvents.map((event) => (
+                  <ListItem
+                    key={event.id}
+                    sx={{
+                      backgroundColor: colors.greenAccent[500],
+                      margin: "10px 0px",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <ListItemText
+                      primary={event.title}
+                      secondary={
+                        <Typography>
+                          {formatDate(event.start, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </Typography>
+                      }
+                    />
+                  </ListItem>
+                ))}
           </List>
         </Box>
 
         {/* ROW 3: Development Progress */}
         <Box
-          gridColumn="span 4"
+          gridColumn={{ xs: "span 12", lg: "span 4" }}
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           overflow="auto"
@@ -172,7 +189,11 @@ const Dashboard = () => {
             alignItems="center"
             mt="25px"
           >
-            <ProgressCircle size="125" progress=".20" />
+            {loadingEvents ? (
+              <Skeleton variant="circular" width={125} height={125} />
+            ) : (
+              <ProgressCircle size="125" progress=".20" />
+            )}
             <Typography
               variant="h5"
               color={colors.greenAccent[500]}
@@ -186,17 +207,23 @@ const Dashboard = () => {
 
         {/* ROW 3: To-Do List */}
         <Box
-          gridColumn="span 4"
-          gridRow="span 2"
+          gridColumn={{ xs: "span 12", lg: "span 4" }}
+          gridRow={{ xs: "span 2", lg: "span 4" }}
           backgroundColor={colors.primary[400]}
           overflow="auto"
         >
-          <TodoList todos={todos} setTodos={setTodos} />
+          {loadingTodos ? (
+            <Box p="15px">
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          ) : (
+            <TodoList todos={todos} setTodos={setTodos} />
+          )}
         </Box>
 
         {/* ROW 4: Team Members */}
         <Box
-          gridColumn="span 6"
+          gridColumn={{ xs: "span 12", lg: "span 4" }}
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="10px"
@@ -214,7 +241,11 @@ const Dashboard = () => {
             </Typography>
           </Box>
           <Box marginTop="25px">
-            <TeamGrid />
+            {loadingTodos ? (
+              <Skeleton variant="rectangular" width="100%" height={100} />
+            ) : (
+              <TeamGrid />
+            )}
           </Box>
         </Box>
 
@@ -225,3 +256,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

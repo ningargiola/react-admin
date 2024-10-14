@@ -13,6 +13,7 @@ import SearchIcon from "@mui/icons-material/Search";
 // Firestore imports
 import { db } from "../../firebase"; // Ensure this is the correct path to your Firebase configuration
 import { collection, onSnapshot } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 const Topbar = () => {
   const theme = useTheme();
@@ -23,6 +24,12 @@ const Topbar = () => {
   const [notifications, setNotifications] = useState([]); // Store the list of notifications
   const [anchorEl, setAnchorEl] = useState(null); // For the notifications popover
   const [profileAnchorEl, setProfileAnchorEl] = useState(null); // For the profile popover (logout)
+
+  const navigate = useNavigate();
+
+  const handleSettingsClick = () => {
+    navigate("/settings"); // Navigate to the settings page
+  };
 
   // Firestore collection references
   const eventsCollectionRef = collection(db, "calendarEvents");
@@ -127,7 +134,7 @@ const Topbar = () => {
         </IconButton>
 
         <IconButton>
-          <SettingsOutlinedIcon />
+          <SettingsOutlinedIcon onClick={handleSettingsClick} />
         </IconButton>
 
         {/* Profile Icon for Logout */}

@@ -71,7 +71,7 @@ const JokeOfTheDay = () => {
 
   return (
     <Box
-      gridColumn="span 6"
+      gridColumn={{xs: "span 12", lg:"span 4"}}
       gridRow="span 2"
       backgroundColor={colors.primary[400]}
       p="10px"

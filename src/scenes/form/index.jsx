@@ -6,15 +6,20 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
 import { auth, db } from "../../firebase";  // Import Firebase auth
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore"; 
+import { setDoc, doc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";  // Import Firebase storage
 
 const Form = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [successMessage, setSuccessMessage] = useState("");
+  const [devTagLight, setDevTagLight] = useState(null);
+  const [devTagDark, setDevTagDark] = useState(null);
+  const [lightUploaded, setLightUploaded] = useState(false);  // Track light file upload status
+  const [darkUploaded, setDarkUploaded] = useState(false);    // Track dark file upload status
+  const storage = getStorage();  // Initialize Firebase storage
 
   const handleFormSubmit = async (values, actions) => {
     try {
-      // Create user with email and password using Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         values.email,
@@ -23,6 +28,24 @@ const Form = () => {
       const user = userCredential.user;
       setSuccessMessage("New user created successfully!");
 
+      let devTagLightURL = "";
+      let devTagDarkURL = "";
+
+      // Upload devtag light
+      if (devTagLight) {
+        const lightRef = ref(storage, `devtags/${user.uid}-light`);
+        const snapshot = await uploadBytes(lightRef, devTagLight);
+        devTagLightURL = await getDownloadURL(snapshot.ref);
+      }
+
+      // Upload devtag dark
+      if (devTagDark) {
+        const darkRef = ref(storage, `devtags/${user.uid}-dark`);
+        const snapshot = await uploadBytes(darkRef, devTagDark);
+        devTagDarkURL = await getDownloadURL(snapshot.ref);
+      }
+
+      // Save user info in Firestore
       await setDoc(doc(db, "users", user.uid), {
         firstName: values.firstName,
         lastName: values.lastName,
@@ -30,17 +53,28 @@ const Form = () => {
         contact: values.contact,
         position: values.position,
         address1: values.address1,
-        address2: values.address2,
         accesslevel: values.accesslevel,
-        uid: user.uid,  // Save the user uid for reference
+        nickname: values.nickname,
+        uid: user.uid,
+        devTagLight: devTagLightURL,   // Store light devtag URL
+        devTagDark: devTagDarkURL,     // Store dark devtag URL
       });
 
-      actions.resetForm(); 
+      actions.resetForm();
 
-      // Log user creation success
     } catch (error) {
       console.error("Error creating user:", error);
     }
+  };
+
+  const handleDevTagLightChange = (event) => {
+    setDevTagLight(event.target.files[0]);
+    setLightUploaded(true);  // Set light file as uploaded
+  };
+
+  const handleDevTagDarkChange = (event) => {
+    setDevTagDark(event.target.files[0]);
+    setDarkUploaded(true);  // Set dark file as uploaded
   };
 
   return (
@@ -111,7 +145,7 @@ const Form = () => {
                 name="email"
                 error={!!touched.email && !!errors.email}
                 helperText={touched.email && errors.email}
-                sx={{ gridColumn: "span 4" }}
+                sx={{ gridColumn: "span 3" }}
               />
               <TextField
                 fullWidth
@@ -124,7 +158,7 @@ const Form = () => {
                 name="password"
                 error={!!touched.password && !!errors.password}
                 helperText={touched.password && errors.password}
-                sx={{ gridColumn: "span 4" }}
+                sx={{ gridColumn: "span 1" }}
               />
               <TextField
                 fullWidth
@@ -137,7 +171,7 @@ const Form = () => {
                 name="contact"
                 error={!!touched.contact && !!errors.contact}
                 helperText={touched.contact && errors.contact}
-                sx={{ gridColumn: "span 2" }}
+                sx={{ gridColumn: "span 1" }}
               />
               <TextField
                 fullWidth
@@ -150,38 +184,38 @@ const Form = () => {
                 name="position"
                 error={!!touched.position && !!errors.position}
                 helperText={touched.position && errors.position}
-                sx={{ gridColumn: "span 2" }}
+                sx={{ gridColumn: "span 1" }}
               />
               <TextField
                 fullWidth
                 variant="filled"
                 type="text"
-                label="Address 1"
+                label="Nickname"
+                onBlur={handleBlur}
+                onChange={handleChange}
+                value={values.position}
+                name="nickname"
+                error={!!touched.position && !!errors.position}
+                helperText={touched.position && errors.position}
+                sx={{ gridColumn: "span 1" }}
+              />
+              <TextField
+                fullWidth
+                variant="filled"
+                type="text"
+                label="Address"
                 onBlur={handleBlur}
                 onChange={handleChange}
                 value={values.address1}
                 name="address1"
                 error={!!touched.address1 && !!errors.address1}
                 helperText={touched.address1 && errors.address1}
-                sx={{ gridColumn: "span 4" }}
-              />
-              <TextField
-                fullWidth
-                variant="filled"
-                type="text"
-                label="Address 2"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.address2}
-                name="address2"
-                error={!!touched.address2 && !!errors.address2}
-                helperText={touched.address2 && errors.address2}
-                sx={{ gridColumn: "span 4" }}
+                sx={{ gridColumn: "span 2" }}
               />
               <FormControl 
                 fullWidth 
                 variant="filled" 
-                sx={{ gridColumn: "span 4" }} 
+                sx={{ gridColumn: "span 1" }} 
                 error={!!touched.accesslevel && !!errors.accesslevel}
               >
               <InputLabel>Access Level</InputLabel>
@@ -202,7 +236,47 @@ const Form = () => {
               </Typography>
               )}
             </FormControl>
+
+              {/* Styled Devtag Light Upload */}
+              <Box sx={{ gridColumn: "span 2" }}>
+              <Typography variant="body1" sx={{ mb: 1 }}>Devtag Light Mode</Typography>
+              <Button
+                variant="contained"
+                component="label"
+                fullWidth
+                sx={{ padding: "16.5px 14px" }}
+                color={lightUploaded ? "success" : "secondary"}  // Change color based on upload status
+              >
+                {lightUploaded ? "Light Devtag Uploaded" : "Upload Light Devtag"}  {/* Change button text */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleDevTagLightChange}
+                  hidden
+                />
+              </Button>
             </Box>
+            {/* Styled Devtag Dark Upload */}
+            <Box sx={{ gridColumn: "span 2" }}>
+              <Typography variant="body1" sx={{ mb: 1 }}>Devtag Dark Mode</Typography>
+              <Button
+                variant="contained"
+                component="label"
+                fullWidth
+                sx={{ padding: "16.5px 14px" }}
+                color={darkUploaded ? "success" : "secondary"}  // Change color based on upload status
+              >
+                {darkUploaded ? "Dark Devtag Uploaded" : "Upload Dark Devtag"}  {/* Change button text */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleDevTagDarkChange}
+                  hidden
+                />
+              </Button>
+            </Box>
+            </Box>
+
             <Box display="flex" justifyContent="end" mt="20px">
               <Button type="submit" color="secondary" variant="contained">
                 Create New User
@@ -229,7 +303,6 @@ const checkoutSchema = yup.object().shape({
     .required("required"),
   position: yup.string().required("required"),
   address1: yup.string().required("required"),
-  address2: yup.string().required("required"),
   accesslevel: yup.string().required("required"),
 });
 const initialValues = {
@@ -239,8 +312,8 @@ const initialValues = {
   password: "",
   contact: "",
   position: "",
+  nickname: "",
   address1: "",
-  address2: "",
   accesslevel: "",
 };
 
