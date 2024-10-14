@@ -9,11 +9,14 @@ import {
   ListItemText,
   TextField,
   Checkbox,
-  Icon,
   useTheme,
 } from "@mui/material";
 import { tokens } from "../theme"; // Assuming you have a custom theme for colors
 import DeleteIcon from "@mui/icons-material/Delete";
+import { auth, db } from "../firebase";
+
+// Firestore imports
+import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc, query, where } from "firebase/firestore";
 
 const TodoList = () => {
   const theme = useTheme();
@@ -21,38 +24,53 @@ const TodoList = () => {
   const [todos, setTodos] = useState([]);
   const [todoText, setTodoText] = useState("");
 
-  // Retrieve To-Do List from localStorage when the component mounts
+  // Firestore collection reference
+  const todosCollectionRef = collection(db, "todo"); // Collection named "todo"
+
+  // Fetch To-Do List from Firestore when the component mounts
   useEffect(() => {
-    const savedTodos = JSON.parse(localStorage.getItem("todoList")) || [];
-    setTodos(savedTodos);
+    const fetchTodos = async () => {
+      const q = query(todosCollectionRef, where("uid", "==", auth.currentUser.uid));
+      const todoDocs = await getDocs(q);
+      const todoItems = todoDocs.docs.map((doc) => ({
+        id: doc.id, // Firestore doc ID
+        ...doc.data(),
+      }));
+      setTodos(todoItems);
+    };
+
+    fetchTodos();
   }, []);
 
-  // Save To-Do List to localStorage whenever todos changes
-  useEffect(() => {
-    localStorage.setItem("todoList", JSON.stringify(todos));
-  }, [todos]);
-
   // Function to add a new to-do item
-  const handleAddTodo = () => {
+  const handleAddTodo = async () => {
     if (todoText.trim() === "") return;
 
     const newTodo = {
-      id: Date.now(),
       text: todoText,
       completed: false,
+      uid: auth.currentUser.uid,
     };
 
-    setTodos([...todos, newTodo]);
+    // Add the new to-do to Firestore
+    const docRef = await addDoc(todosCollectionRef, newTodo);
+    setTodos([...todos, { id: docRef.id, ...newTodo }]); // Add the new to-do with Firestore-generated ID
+
     setTodoText(""); // Clear input after adding
   };
 
-  // Function to delete a to-do item
-  const handleDeleteTodo = (id) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+  // Function to delete a to-do item from Firestore
+  const handleDeleteTodo = async (id) => {
+    await deleteDoc(doc(db, "todo", id)); // Delete the to-do from Firestore
+    setTodos(todos.filter((todo) => todo.id !== id)); // Remove from state
   };
 
   // Function to toggle completion of a to-do item
-  const handleToggleComplete = (id) => {
+  const handleToggleComplete = async (id, completed) => {
+    const todoRef = doc(db, "todo", id);
+    await updateDoc(todoRef, { completed: !completed }); // Update the "completed" status in Firestore
+
+    // Update the local state
     setTodos(
       todos.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
@@ -105,7 +123,9 @@ const TodoList = () => {
           <ListItem
             key={todo.id}
             sx={{
-              backgroundColor: todo.completed ? colors.greenAccent[500] : colors.primary[700],
+              backgroundColor: todo.completed
+                ? colors.greenAccent[500]
+                : colors.primary[700],
               margin: "10px 0",
               borderRadius: "5px",
               display: "flex",
@@ -114,10 +134,10 @@ const TodoList = () => {
           >
             <Checkbox
               checked={todo.completed}
-              onChange={() => handleToggleComplete(todo.id)}
+              onChange={() => handleToggleComplete(todo.id, todo.completed)}
               sx={{
                 color: colors.greenAccent[600],
-                '&.Mui-checked': {
+                "&.Mui-checked": {
                   color: colors.greenAccent[600],
                 },
               }}
@@ -134,8 +154,11 @@ const TodoList = () => {
                 </Typography>
               }
             />
-            <IconButton onClick={() => handleDeleteTodo(todo.id)} sx={{ marginRight: "10px" }}>
-            <DeleteIcon sx={{ color: colors.redAccent[500], fontSize: "30px" }} />
+            <IconButton
+              onClick={() => handleDeleteTodo(todo.id)}
+              sx={{ marginRight: "10px" }}
+            >
+              <DeleteIcon sx={{ color: colors.redAccent[500], fontSize: "30px" }} />
             </IconButton>
           </ListItem>
         ))}

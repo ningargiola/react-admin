@@ -1,83 +1,86 @@
-import { Box, Button, IconButton, Typography, useTheme, List, ListItem, ListItemText } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Box, List, ListItem, ListItemText, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EmailIcon from "@mui/icons-material/Email";
-import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import TrafficIcon from "@mui/icons-material/Traffic";
-import Header from "../../components/Header";
-import LineChart from "../../components/LineChart";
-import GeographyChart from "../../components/GeographyChart";
-import BarChart from "../../components/BarChart";
-import StatBox from "../../components/StatBox";
-import ProgressCircle from "../../components/ProgressCircle";
-import FullCalendar from "@fullcalendar/react"; // Import FullCalendar for event management
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
 import { formatDate } from "@fullcalendar/core";
-import { useState, useEffect } from "react";
+import Header from "../../components/Header";
+import ProgressCircle from "../../components/ProgressCircle";
 import TodoList from "../../components/ToDoList";
-import userImage from '/Users/nickingargiola/react-admin/src/assets/user.png';
 import TeamGrid from "../../components/TeamGrid";
 import JokeOfTheDay from "../../components/JokeOfTheDay";
 
+// Firestore imports
+import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { db } from "../../firebase"; // Ensure Firestore is correctly initialized
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [currentEvents, setCurrentEvents] = useState([]);
   const [todos, setTodos] = useState([]);
-  const [todoText, setTodoText] = useState("");
 
-  // Retrieve events from localStorage when the component mounts
+  // Firestore collection references
+  const eventsCollectionRef = collection(db, "calendar");
+  const todosCollectionRef = collection(db, "todo");
+
+  // Fetch events from Firestore when the component mounts
   useEffect(() => {
-    const savedEvents = JSON.parse(localStorage.getItem("calendarEvents")) || [];
-    setCurrentEvents(savedEvents);
+    const fetchEvents = async () => {
+      const eventDocs = await getDocs(eventsCollectionRef);
+      const events = eventDocs.docs.map((doc) => ({
+        id: doc.id, // Use Firestore doc ID as event ID
+        ...doc.data(),
+      }));
+      setCurrentEvents(events);
+    };
+
+    const fetchTodos = async () => {
+      const todoDocs = await getDocs(todosCollectionRef);
+      const todoItems = todoDocs.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTodos(todoItems);
+    };
+
+    fetchEvents();
+    fetchTodos();
   }, []);
 
-  // Save events to localStorage whenever currentEvents changes
-  useEffect(() => {
-    if (currentEvents.length > 0) {
-      localStorage.setItem("calendarEvents", JSON.stringify(currentEvents));
-    }
-  }, [currentEvents]);
-
-  const handleDateClick = (selected) => {
+  // Add new event to Firestore
+  const handleDateClick = async (selected) => {
     const title = prompt("Please enter a new title for your event");
     const calendarApi = selected.view.calendar;
     calendarApi.unselect(); // Clear the selection after the prompt
 
     if (title) {
       const newEvent = {
-        id: `${selected.dateStr}-${title}`,
         title,
         start: selected.startStr,
         end: selected.endStr || selected.startStr,
         allDay: selected.allDay,
       };
 
-      setCurrentEvents((prevEvents) => [...prevEvents, newEvent]);
+      // Add the event to Firestore
+      const docRef = await addDoc(eventsCollectionRef, newEvent);
+      setCurrentEvents((prevEvents) => [
+        ...prevEvents,
+        { id: docRef.id, ...newEvent }, // Use Firestore doc ID as event ID
+      ]);
     }
   };
 
-    // Retrieve To-Do List from localStorage when the component mounts
-    useEffect(() => {
-      const savedTodos = JSON.parse(localStorage.getItem("todoList")) || [];
-      setTodos(savedTodos);
-    }, []);
-  
-    // Save To-Do List to localStorage whenever todos changes
-    useEffect(() => {
-      localStorage.setItem("todoList", JSON.stringify(todos));
-    }, [todos]);
-
-  const handleEventClick = (selected) => {
+  // Handle event click to remove an event from Firestore
+  const handleEventClick = async (selected) => {
     if (window.confirm(`Are you sure you want to delete the event '${selected.event.title}'`)) {
-      const updatedEvents = currentEvents.filter(
-        (event) => event.id !== selected.event.id
+      const eventId = selected.event.id;
+
+      // Delete the event from Firestore
+      await deleteDoc(doc(db, "calendarEvents", eventId));
+
+      // Remove the event from the state
+      setCurrentEvents((prevEvents) =>
+        prevEvents.filter((event) => event.id !== eventId)
       );
-      setCurrentEvents(updatedEvents);
     }
   };
 
@@ -96,8 +99,7 @@ const Dashboard = () => {
         gap="20px"
       >
 
-
-        {/* ROW 2 */}
+        {/* ROW 2: Deadlines */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -144,7 +146,7 @@ const Dashboard = () => {
           </List>
         </Box>
 
-        {/* ROW 3 */}
+        {/* ROW 3: Development Progress */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -160,9 +162,9 @@ const Dashboard = () => {
             colors={colors.grey[100]}
             p="15px"
           >
-          <Typography variant="h5" fontWeight="600">
-            Devlopment Progress
-          </Typography>
+            <Typography variant="h5" fontWeight="600">
+              Development Progress
+            </Typography>
           </Box>
           <Box
             display="flex"
@@ -181,21 +183,25 @@ const Dashboard = () => {
             <Typography>App Dev!</Typography>
           </Box>
         </Box>
+
+        {/* ROW 3: To-Do List */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           overflow="auto"
         >
-          <TodoList />
+          <TodoList todos={todos} setTodos={setTodos} />
         </Box>
+
+        {/* ROW 4: Team Members */}
         <Box
           gridColumn="span 6"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="10px"
         >
-           <Box
+          <Box
             display="flex"
             justifyContent="space-between"
             alignItems="center"
@@ -208,10 +214,11 @@ const Dashboard = () => {
             </Typography>
           </Box>
           <Box marginTop="25px">
-              <TeamGrid />
+            <TeamGrid />
           </Box>
         </Box>
-        <JokeOfTheDay/>
+
+        <JokeOfTheDay />
       </Box>
     </Box>
   );

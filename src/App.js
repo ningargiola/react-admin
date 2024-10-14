@@ -1,53 +1,50 @@
-import { ColorModeContext, useMode} from './theme';
+import { ColorModeContext, useMode } from './theme';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { Routes, Route } from "react-router-dom";
 import Topbar from "./scenes/global/Topbar";
-import  Dashboard from './scenes/dashboard';
+import Dashboard from './scenes/dashboard';
 import Sidebar from "./scenes/global/Sidebar";
 import Team from "./scenes/team";
 import Invoices from "./scenes/invoices";
 import Contacts from "./scenes/contacts";
-//import Bar from "./scenes/bar";
 import Form from "./scenes/form";
-//import Line from "./scenes/line";
-//import Pie from "./scenes/pie";
 import FAQ from "./scenes/faq";
-//import Geography from "./scenes/geography";
 import Calendar from "./scenes/calendar/calendar";
+import LoginPage from './scenes/login';  // Import your login page
+import PrivateRoute from './PrivateRoute'; // Import your PrivateRoute component
+import { useAuth } from './authprovider';  // Import the authentication hook
 
 function App() {
   const [theme, colorMode] = useMode();
+  const { user } = useAuth();  // Destructure the user from your auth context
+
   return (
-    <ColorModeContext.Provider value = {colorMode}>
-      <ThemeProvider theme = {theme}>
+    <ColorModeContext.Provider value={colorMode}>
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <div className="app">
-          <Sidebar />
+          {user && <Sidebar />}  {/* Show sidebar only if user is authenticated */}
           <main className='content'>
-            <Topbar />
+            {user && <Topbar />}  {/* Show topbar only if user is authenticated */}
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/form" element={<Form />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/invoices" element={<Invoices />} />
-              {/* <Route path="/team" element={<Team />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/form" element={<Form />} />
-              <Route path="/bar" element={<Bar />} />
-              <Route path="/pie" element={<Pie />} />
-              <Route path="/line" element={<Line />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/geography" element={<Geography />} /> */}
+              <Route path="/login" element={<LoginPage />} /> {/* Public route for login */}
+
+              {/* Protect routes with PrivateRoute */}
+              <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/calendar" element={<PrivateRoute><Calendar /></PrivateRoute>} />
+              <Route path="/team" element={<PrivateRoute><Team /></PrivateRoute>} />
+              <Route path="/form" element={<PrivateRoute><Form /></PrivateRoute>} />
+              <Route path="/faq" element={<PrivateRoute><FAQ /></PrivateRoute>} />
+              <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
+              <Route path="/invoices" element={<PrivateRoute><Invoices /></PrivateRoute>} />
+
             </Routes>
           </main>
         </div>
-       </ThemeProvider>
+      </ThemeProvider>
     </ColorModeContext.Provider>
   );
 }
 
 export default App;
+

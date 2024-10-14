@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -24,6 +24,10 @@ import {
 import Header from "../../components/Header";
 import { tokens } from "../../theme";
 
+// Firestore imports
+import { db } from "../../firebase"; // Ensure you have Firebase and Firestore initialized
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore"; // Firestore functions
+
 const Calendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -36,18 +40,58 @@ const Calendar = () => {
     allDay: false, // Add allDay property
   });
 
-  // Retrieve events from localStorage when the component mounts
+  // Firestore collection reference
+  const eventsCollectionRef = collection(db, "calendar"); // Reference to Firestore collection
+
+  // Fetch events from Firestore when the component mounts
   useEffect(() => {
-    const savedEvents = JSON.parse(localStorage.getItem("calendarEvents")) || [];
-    setCurrentEvents(savedEvents);
+    const fetchEvents = async () => {
+      const eventDocs = await getDocs(eventsCollectionRef);
+      const events = eventDocs.docs.map((doc) => ({
+        id: doc.id, // Use Firestore doc ID as event ID
+        ...doc.data(),
+      }));
+      setCurrentEvents(events);
+    };
+    fetchEvents();
   }, []);
 
-  // Save events to localStorage whenever currentEvents changes
-  useEffect(() => {
-    if (currentEvents.length > 0) {
-      localStorage.setItem("calendarEvents", JSON.stringify(currentEvents));
+  // Save events to Firestore when an event is added
+  const handleAddEvent = async () => {
+    if (newEvent.title && newEvent.start && (newEvent.allDay || newEvent.end)) {
+      const calendarEvent = {
+        title: newEvent.title,
+        start: newEvent.start,
+        end: newEvent.allDay ? newEvent.start : newEvent.end, // If allDay is true, use start date as end date as well
+        allDay: newEvent.allDay, // Pass allDay property to event
+      };
+
+      // Add the event to Firestore
+      const docRef = await addDoc(eventsCollectionRef, calendarEvent);
+      setCurrentEvents((prevEvents) => [
+        ...prevEvents,
+        { id: docRef.id, ...calendarEvent }, // Use Firestore doc ID as event ID
+      ]);
+
+      // Reset and close the dialog
+      handleClose();
+    } else {
+      alert("Please fill out all fields!");
     }
-  }, [currentEvents]);
+  };
+
+  // Handle event click to remove an event
+  const handleEventClick = async (selected) => {
+    if (window.confirm(`Are you sure you want to delete the event '${selected.event.title}'`)) {
+      const eventId = selected.event.id;
+
+      // Delete the event from Firestore
+      await deleteDoc(doc(db, "calendar", eventId));
+
+      // Remove the event from the state
+      setCurrentEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+    }
+  };
 
   // Handle date selection to add an event
   const handleDateClick = (selected) => {
@@ -63,36 +107,6 @@ const Calendar = () => {
       end: "",
       allDay: false, // Reset allDay property
     });
-  };
-
-  // Handle adding a new event
-  const handleAddEvent = () => {
-    if (newEvent.title && newEvent.start && (newEvent.allDay || newEvent.end)) {
-      const calendarEvent = {
-        id: `${newEvent.start}-${newEvent.title}`,
-        title: newEvent.title,
-        start: newEvent.start,
-        end: newEvent.allDay ? newEvent.start : newEvent.end, // If allDay is true, use start date as end date as well
-        allDay: newEvent.allDay, // Pass allDay property to event
-      };
-
-      setCurrentEvents((prevEvents) => [...prevEvents, calendarEvent]);
-
-      // Reset and close the dialog
-      handleClose();
-    } else {
-      alert("Please fill out all fields!");
-    }
-  };
-
-  // Handle event click to remove an event
-  const handleEventClick = (selected) => {
-    if (window.confirm(`Are you sure you want to delete the event '${selected.event.title}'`)) {
-      const updatedEvents = currentEvents.filter(
-        (event) => event.id !== selected.event.id
-      );
-      setCurrentEvents(updatedEvents);
-    }
   };
 
   // Handle input change for new event
@@ -248,3 +262,4 @@ const Calendar = () => {
 };
 
 export default Calendar;
+
