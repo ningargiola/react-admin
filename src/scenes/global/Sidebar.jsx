@@ -13,8 +13,6 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
-import gargDevTagWhite from '/Users/nickingargiola/react-admin/src/assets/logoWhite.png';
-import gargDevTagDark from '/Users/nickingargiola/react-admin/src/assets/portfoliologo.png';
 
 import { auth, db, storage } from "../../firebase"; // Ensure proper Firebase imports
 import { onAuthStateChanged } from "firebase/auth";
