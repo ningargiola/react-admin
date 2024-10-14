@@ -1,10 +1,10 @@
 import { Box, Typography } from '@mui/material';
-import gargDevTagWhite from '/Users/nickingargiola/react-admin/src/assets/logoWhite.png';
-import gargDevTagDark from '/Users/nickingargiola/react-admin/src/assets/portfoliologo.png';
-import snellDevTagWhite from '/Users/nickingargiola/react-admin/src/assets/image-2.png';
-import snellDevTagDark from '/Users/nickingargiola/react-admin/src/assets/SnellDevTag1.png';
-import ferryDevTagWhite from '/Users/nickingargiola/react-admin/src/assets/image.png';
-import ferryDevTagDark from '/Users/nickingargiola/react-admin/src/assets/FerryDevTag2.png';
+import gargDevTagWhite from '../assets/logoWhite.png';
+import gargDevTagDark from '../assets/portfoliologo.png';
+import snellDevTagWhite from '../assets/image-2.png';
+import snellDevTagDark from '../assets/SnellDevTag1.png';
+import ferryDevTagWhite from '../assets/image.png';
+import ferryDevTagDark from '../assets/FerryDevTag2.png';
 import { useTheme } from '@emotion/react';
 import { tokens } from '../theme';
 
