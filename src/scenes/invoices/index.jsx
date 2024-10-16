@@ -14,8 +14,7 @@ const Invoices = () => {
   const [open, setOpen] = useState(false); // For opening the dialog
   const [newInvoice, setNewInvoice] = useState({
     name: "",
-    phone: "",
-    email: "",
+    description: "",
     cost: "",
     date: "",
   });
@@ -43,13 +42,8 @@ const Invoices = () => {
       cellClassName: "name-column--cell",
     },
     {
-      field: "phone",
-      headerName: "Phone Number",
-      flex: 1,
-    },
-    {
-      field: "email",
-      headerName: "Email",
+      field: "description",
+      headerName: "description",
       flex: 1,
     },
     {
@@ -108,8 +102,7 @@ const Invoices = () => {
 
     setNewInvoice({
       name: "",
-      phone: "",
-      email: "",
+      description: "",
       cost: "",
       date: "",
     });
@@ -188,22 +181,12 @@ const Invoices = () => {
           />
           <TextField
             margin="dense"
-            name="phone"
-            label="Phone"
+            name="description"
+            label="Description"
             type="text"
             fullWidth
             variant="outlined"
-            value={newInvoice.phone}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="dense"
-            name="email"
-            label="Email"
-            type="email"
-            fullWidth
-            variant="outlined"
-            value={newInvoice.email}
+            value={newInvoice.description}
             onChange={handleChange}
           />
           <TextField
