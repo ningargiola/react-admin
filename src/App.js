@@ -14,6 +14,7 @@ import LoginPage from './scenes/login';  // Import your login page
 import PrivateRoute from './PrivateRoute'; // Import your PrivateRoute component
 import { useAuth } from './authprovider';  // Import the authentication hook
 import Settings from './scenes/settings';
+import Cam from './scenes/cam';
 
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
               <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
               <Route path="/invoices" element={<PrivateRoute><Invoices /></PrivateRoute>} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/cam" element={<PrivateRoute><Cam /></PrivateRoute>} />
             </Routes>
           </main>
         </div>

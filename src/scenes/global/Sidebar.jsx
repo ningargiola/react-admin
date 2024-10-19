@@ -13,6 +13,7 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
 
 import { auth, db, storage } from "../../firebase"; // Ensure proper Firebase imports
 import { onAuthStateChanged } from "firebase/auth";
@@ -233,9 +234,9 @@ const Sidebar = () => {
                 setSelected={setSelected}
               />
               <Item
-                title="Data"
-                to="/bar"
-                icon={<BarChartOutlinedIcon />}
+                title="Cam's Page"
+                to="/cam"
+                icon={<LocalFloristIcon />}
                 selected={selected}
                 setSelected={setSelected}
               />
