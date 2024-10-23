@@ -5,6 +5,8 @@ import snellDevTagWhite from '../assets/image-2.png';
 import snellDevTagDark from '../assets/SnellDevTag1.png';
 import ferryDevTagWhite from '../assets/image.png';
 import ferryDevTagDark from '../assets/FerryDevTag2.png';
+import bryceDevTagWhite from '../assets/BryceDevTag2.png';
+import bryceDevTagDark from '../assets/BryceDevTag.png';
 import { useTheme } from '@emotion/react';
 import { tokens } from '../theme';
 
@@ -20,13 +22,18 @@ const TeamGrid = () => {
     },
     {
       name: 'Snell',
-      title: 'CEO',
+      title: 'CTO',
       image: theme.palette.mode === 'light' ? snellDevTagDark : snellDevTagWhite,
     },
     {
       name: 'Ferry',
       title: 'COO',
       image: theme.palette.mode === 'light' ? ferryDevTagDark : ferryDevTagWhite,
+    },
+    {
+      name: 'Bruno',
+      title: 'CFO',
+      image: theme.palette.mode === 'light' ? bryceDevTagDark : bryceDevTagWhite,
     },
     // Add more team members here
   ];
