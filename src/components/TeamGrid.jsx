@@ -27,7 +27,7 @@ const TeamGrid = () => {
     },
     {
       name: 'Ferry',
-      title: 'COO',
+      title: 'COO/Ceo',
       image: theme.palette.mode === 'light' ? ferryDevTagDark : ferryDevTagWhite,
     },
     {
